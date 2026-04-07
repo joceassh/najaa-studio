@@ -601,9 +601,12 @@
   box-sizing: border-box;
   border-radius: var(--gallery-cell-radius);
   overflow: hidden;
-  box-shadow: 0 1px 6px rgba(16, 44, 87, 0.07);
+  border: none;
+  box-shadow:
+    0 10px 28px rgba(16, 44, 87, 0.14),
+    0 4px 10px rgba(0, 0, 0, 0.07),
+    0 1px 3px rgba(16, 44, 87, 0.08);
   background: linear-gradient(165deg, #d8d2c8 0%, #cec6ba 55%, #c4bcb0 100%);
-  border: 1px solid rgba(16, 44, 87, 0.14);
 }
 
 /* Di grid mosaic: tinggi dari baris, bukan aspect-ratio per sel */
@@ -663,6 +666,11 @@
   --pkg-slide-width: clamp(152px, 15.5vw, 228px);
   --pkg-slide-active-width: clamp(172px, 20vw, 276px);
   --packages-track-gap: clamp(12px, 2vw, 32px);
+  /* Carousel: durasi & easing seragam agar lebar kartu + scale sinkron dan halus */
+  --pkg-carousel-duration: 0.7s;
+  --pkg-carousel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --pkg-carousel-enter-duration: 0.82s;
+  --pkg-carousel-enter-ease: cubic-bezier(0.18, 1, 0.28, 1);
   padding: 0;
   overflow-x: visible;
   overflow-y: visible;
@@ -760,8 +768,13 @@
   width: var(--pkg-slide-width);
   /* Opacity penuh agar foto tidak tembus ke background biru/krim section */
   opacity: 1;
-  transition: width 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: width var(--pkg-carousel-duration) var(--pkg-carousel-ease);
   z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
 }
 
 .package-slide.is-active {
@@ -777,23 +790,34 @@
   background: var(--brand-blue);
   transform-origin: center center;
   transform: translateZ(0) scale(0.96);
-  transition: transform 0.55s cubic-bezier(0.33, 0.12, 0.2, 1);
-  box-shadow: none;
+  transition:
+    transform var(--pkg-carousel-duration) var(--pkg-carousel-ease),
+    box-shadow var(--pkg-carousel-duration) var(--pkg-carousel-ease);
+  border: none;
+  outline: none;
+  /* Tanpa lapisan blur rapat di tepi — di kartu kecil (scale 0.96) itu tampak seperti border */
+  box-shadow:
+    0 14px 36px rgba(16, 44, 87, 0.12),
+    0 5px 16px rgba(0, 0, 0, 0.06);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  will-change: transform;
   isolation: isolate;
 }
 
 .package-slide.is-active .package-slide-frame {
   transform: translateZ(0) scale(1);
-  box-shadow: 0 8px 32px rgba(16, 44, 87, 0.28), 0 4px 14px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 14px 40px rgba(16, 44, 87, 0.3),
+    0 6px 18px rgba(0, 0, 0, 0.12),
+    0 2px 6px rgba(16, 44, 87, 0.14);
 }
 
-/* Geser paket: transisi halus, hampir tanpa “pop” keras */
+/* Geser paket: masuk lebih lembut (sedikit geser + scale halus, tanpa “snap”) */
 @keyframes pkg-enter-next {
   0% {
-    opacity: 0.88;
-    transform: translateZ(0) scale(0.965) translate3d(10px, 0, 0);
+    opacity: 0.94;
+    transform: translateZ(0) scale(0.988) translate3d(14px, 0, 0);
   }
   100% {
     opacity: 1;
@@ -803,8 +827,8 @@
 
 @keyframes pkg-enter-prev {
   0% {
-    opacity: 0.88;
-    transform: translateZ(0) scale(0.965) translate3d(-10px, 0, 0);
+    opacity: 0.94;
+    transform: translateZ(0) scale(0.988) translate3d(-14px, 0, 0);
   }
   100% {
     opacity: 1;
@@ -815,9 +839,9 @@
 .package-slide.is-active .package-slide-frame.package-slide-frame--enter-next,
 .package-slide.is-active .package-slide-frame.package-slide-frame--enter-prev {
   transition: none;
-  animation-duration: 0.58s;
-  animation-timing-function: cubic-bezier(0.33, 0.06, 0.2, 1);
-  animation-fill-mode: forwards;
+  animation-duration: var(--pkg-carousel-enter-duration);
+  animation-timing-function: var(--pkg-carousel-enter-ease);
+  animation-fill-mode: both;
 }
 
 .package-slide.is-active .package-slide-frame.package-slide-frame--enter-next {
@@ -828,19 +852,54 @@
   animation-name: pkg-enter-prev;
 }
 
+/* Foto baru di slot: fade-in biar tidak “spawn” saat src / key berubah */
+@keyframes pkg-img-soft-in {
+  from {
+    opacity: 0.001;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .package-slide-frame img.package-slide-img {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  /* Sedikit bleed menutup celah subpiksel di tepi radius (tampak seperti border) */
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  box-shadow: none;
   object-fit: cover;
   object-position: center center;
   display: block;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  animation: pkg-img-soft-in 0.48s var(--pkg-carousel-ease) both;
+}
+
+/* Kartu samping (1,2,4,5): frame di-scale kecil + radius → bleed lebih besar + layer GPU */
+.package-slide:not(.is-active) .package-slide-frame img.package-slide-img:not(.package-slide-img--maternity-belly) {
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  transform: translate3d(0, 0, 0);
 }
 
 /* Maternity: zoom kuat ke bagian perut (wajah/atas keluar dari frame) */
 .package-slide-frame img.package-slide-img--maternity-belly {
   object-position: center 84%;
-  transform: scale(1.52);
+  transform: translate3d(0, 0, 0) scale(1.52);
   transform-origin: center 78%;
+}
+
+.package-slide:not(.is-active) .package-slide-frame img.package-slide-img--maternity-belly {
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
 }
 
 /* Hanya dipasang di slot tengah (React); fade in saat paket aktif berganti */
@@ -849,7 +908,7 @@
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  animation: package-slide-overlay-in 0.48s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  animation: package-slide-overlay-in 0.62s var(--pkg-carousel-ease) forwards;
 }
 
 @keyframes package-slide-overlay-in {
@@ -862,7 +921,26 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .packages-section {
+    --pkg-carousel-duration: 0.01ms;
+    --pkg-carousel-enter-duration: 0.01ms;
+  }
+
+  .package-slide,
+  .package-slide-frame {
+    transition-duration: 0.01ms;
+  }
+
+  .package-slide.is-active .package-slide-frame.package-slide-frame--enter-next,
+  .package-slide.is-active .package-slide-frame.package-slide-frame--enter-prev {
+    animation-duration: 0.01ms;
+  }
+
   .package-slide-overlay {
+    animation-duration: 0.01ms;
+  }
+
+  .package-slide-frame img.package-slide-img {
     animation-duration: 0.01ms;
   }
 }

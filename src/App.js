@@ -278,6 +278,7 @@ function HomePage() {
   const [packageSlide, setPackageSlide] = useState(0);
   const [reviewDotPage, setReviewDotPage] = useState(0);
   const reviewTrackRef = useRef(null);
+  const packageCarouselCenterFrameRef = useRef(null);
   const [packageEnterDir, setPackageEnterDir] = useState(null);
 
   /* ── Form booking ── */
@@ -399,6 +400,19 @@ function HomePage() {
     window.addEventListener('resize', syncReviewDotFromTrack);
     return () => window.removeEventListener('resize', syncReviewDotFromTrack);
   }, []);
+
+  /* Putar ulang animasi kartu aktif tanpa me-remount frame (menghindari “spawn” kasar) */
+  useLayoutEffect(() => {
+    const el = packageCarouselCenterFrameRef.current;
+    if (!el) return;
+    if (!packageEnterDir) {
+      el.classList.remove('package-slide-frame--enter-next', 'package-slide-frame--enter-prev');
+      return;
+    }
+    el.classList.remove('package-slide-frame--enter-next', 'package-slide-frame--enter-prev');
+    void el.offsetWidth;
+    el.classList.add(`package-slide-frame--enter-${packageEnterDir}`);
+  }, [packageSlide, packageEnterDir]);
 
   const activeIndex = NAV_ITEMS.findIndex((item) => item.id === activeSection);
 
@@ -562,16 +576,17 @@ function HomePage() {
                       aria-hidden={!isCenter}
                     >
                       <div
-                        key={isCenter ? packageSlide : offset}
-                        className={`package-slide-frame${isCenter && packageEnterDir ? ` package-slide-frame--enter-${packageEnterDir}` : ''}`}
+                        ref={isCenter ? packageCarouselCenterFrameRef : null}
+                        className="package-slide-frame"
                       >
                         <img
+                          key={`${offset}-${pkg.id}`}
                           src={imgSrc}
                           alt={pkg.imageAlt || ''}
                           className={pkg.imageClassName ? `package-slide-img ${pkg.imageClassName}` : 'package-slide-img'}
                         />
                         {isCenter && (
-                          <div className="package-slide-overlay" key={packageSlide}>
+                          <div className="package-slide-overlay">
                             <div className="package-slide-gradient" aria-hidden="true" />
                             <div className="package-slide-body">
                               <h3
