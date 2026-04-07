@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import heroBerandaPhoto from './Assets/Beranda/GI MAKSI FARID AZHAR (59) FACHRI.jpg';
 import aboutTentangPhoto from './Assets/Tentang Kami/DAY00213.jpg';
 import pkgPreweddOutdoor from './Assets/Paket Foto/WJY02821.jpg';
@@ -23,6 +23,13 @@ import galeri8 from './Assets/GALERI/GALERI 8.png';
 import galeri9 from './Assets/GALERI/GALERI 9.png';
 import galeri10 from './Assets/GALERI/GALERI 10.png';
 import galeri11 from './Assets/GALERI/GALERI 11.png';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from './components/ui/carousel';
 import './App.css';
 
 const NAV_ITEMS = [
@@ -51,7 +58,7 @@ const PACKAGE_ITEMS = [
   {
     id: 'self-photo-unlimited',
     title: 'SELF PHOTO Unlimited',
-    titleClassName: 'package-slide-name--one-line',
+    titleClassName: 'package-slide-name--one-line package-slide-name--long',
     priceLine: 'Mulai dari',
     priceStrong: '30K',
     image: pkgSelfPhotoUnlimited,
@@ -148,9 +155,6 @@ const PACKAGE_ITEMS = [
 ];
 
 const PACKAGE_SLIDE_COUNT = PACKAGE_ITEMS.length;
-/** Slot tetap: tengah (0) = paket aktif; kiri/kanan hanya ganti isi, tanpa geser track */
-const PACKAGE_SLOT_OFFSETS = [-2, -1, 0, 1, 2];
-
 /** Jumlah titik pagination ulasan (bukan per kartu) */
 const REVIEW_DOT_COUNT = 5;
 
@@ -276,10 +280,28 @@ function HomePage() {
   const [activeSection, setActiveSection] = useState('beranda');
   const [logoOnLightBg, setLogoOnLightBg] = useState(true);
   const [packageSlide, setPackageSlide] = useState(0);
+  const [packageDragging, setPackageDragging] = useState(false);
+  const [packageScrolling, setPackageScrolling] = useState(false);
+  const [packageEmblaApi, setPackageEmblaApi] = useState(null);
   const [reviewDotPage, setReviewDotPage] = useState(0);
   const reviewTrackRef = useRef(null);
-  const packageCarouselCenterFrameRef = useRef(null);
-  const [packageEnterDir, setPackageEnterDir] = useState(null);
+  const isPasPhotoActive = PACKAGE_ITEMS[packageSlide]?.id === 'pas-photo';
+  const isGroupPhotoClassActive = PACKAGE_ITEMS[packageSlide]?.id === 'group-photo-class';
+
+  useEffect(() => {
+    const preloadedImages = PACKAGE_ITEMS.map((item) => {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = item.image;
+      return img;
+    });
+
+    return () => {
+      preloadedImages.forEach((img) => {
+        img.src = '';
+      });
+    };
+  }, []);
 
   /* ── Form booking ── */
   const WA_NUMBER = '6285171610354';
@@ -401,18 +423,33 @@ function HomePage() {
     return () => window.removeEventListener('resize', syncReviewDotFromTrack);
   }, []);
 
-  /* Putar ulang animasi kartu aktif tanpa me-remount frame (menghindari “spawn” kasar) */
-  useLayoutEffect(() => {
-    const el = packageCarouselCenterFrameRef.current;
-    if (!el) return;
-    if (!packageEnterDir) {
-      el.classList.remove('package-slide-frame--enter-next', 'package-slide-frame--enter-prev');
-      return;
-    }
-    el.classList.remove('package-slide-frame--enter-next', 'package-slide-frame--enter-prev');
-    void el.offsetWidth;
-    el.classList.add(`package-slide-frame--enter-${packageEnterDir}`);
-  }, [packageSlide, packageEnterDir]);
+  const syncPackageSlide = useCallback(() => {
+    if (!packageEmblaApi) return;
+    setPackageSlide(packageEmblaApi.selectedScrollSnap());
+  }, [packageEmblaApi]);
+
+  useEffect(() => {
+    if (!packageEmblaApi) return;
+    syncPackageSlide();
+    const onPointerDown = () => setPackageDragging(true);
+    const onScroll = () => setPackageScrolling(true);
+    const onSettle = () => {
+      setPackageDragging(false);
+      setPackageScrolling(false);
+    };
+    packageEmblaApi.on('select', syncPackageSlide);
+    packageEmblaApi.on('reInit', syncPackageSlide);
+    packageEmblaApi.on('pointerDown', onPointerDown);
+    packageEmblaApi.on('scroll', onScroll);
+    packageEmblaApi.on('settle', onSettle);
+    return () => {
+      packageEmblaApi.off('select', syncPackageSlide);
+      packageEmblaApi.off('reInit', syncPackageSlide);
+      packageEmblaApi.off('pointerDown', onPointerDown);
+      packageEmblaApi.off('scroll', onScroll);
+      packageEmblaApi.off('settle', onSettle);
+    };
+  }, [packageEmblaApi, syncPackageSlide]);
 
   const activeIndex = NAV_ITEMS.findIndex((item) => item.id === activeSection);
 
@@ -422,16 +459,6 @@ function HomePage() {
     const headerOffset = 84;
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset;
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  };
-
-  const packagePrev = () => {
-    setPackageEnterDir('prev');
-    setPackageSlide((i) => (i - 1 + PACKAGE_SLIDE_COUNT) % PACKAGE_SLIDE_COUNT);
-  };
-
-  const packageNext = () => {
-    setPackageEnterDir('next');
-    setPackageSlide((i) => (i + 1) % PACKAGE_SLIDE_COUNT);
   };
 
   const logoSrc = `${process.env.PUBLIC_URL}/najaa-studio-logo.png`;
@@ -558,100 +585,107 @@ function HomePage() {
           </header>
 
           <div className="packages-carousel-wrap">
-            <div className="packages-carousel" role="region" aria-roledescription="carousel" aria-label="Paket foto">
-              <div className="packages-track">
-                {PACKAGE_SLOT_OFFSETS.map((offset) => {
-                  const idx =
-                    ((packageSlide + offset) % PACKAGE_SLIDE_COUNT + PACKAGE_SLIDE_COUNT) %
-                    PACKAGE_SLIDE_COUNT;
-                  const isCenter = offset === 0;
-                  const pkg = PACKAGE_ITEMS[idx];
+            <Carousel
+              className="packages-carousel"
+              opts={{ align: 'center', loop: true, duration: 34 }}
+              setApi={setPackageEmblaApi}
+              aria-label="Paket foto"
+            >
+              <CarouselContent
+                className={`packages-track ${packageDragging ? 'is-dragging' : ''} ${packageScrolling ? 'is-scrolling' : ''} ${isPasPhotoActive ? 'is-pas-photo-active' : ''} ${isGroupPhotoClassActive ? 'is-group-photo-class-active' : ''}`}
+              >
+                {PACKAGE_ITEMS.map((pkg, idx) => {
+                  const isCenter = idx === packageSlide;
+                  const isPrev =
+                    idx === ((packageSlide - 1 + PACKAGE_SLIDE_COUNT) % PACKAGE_SLIDE_COUNT);
+                  const isNext = idx === ((packageSlide + 1) % PACKAGE_SLIDE_COUNT);
                   const imgSrc =
                     pkg.image ??
                     `https://placehold.co/720x960/4a5f7a/d8e4f5/png?text=Paket+${idx + 1}`;
                   return (
-                    <article
-                      key={`slot-${offset}`}
-                      className={`package-slide ${isCenter ? 'is-active' : ''}`}
+                    <CarouselItem
+                      key={pkg.id}
+                      className={`package-slide ${isCenter ? 'is-active' : ''} ${isPrev ? 'is-prev' : ''} ${isNext ? 'is-next' : ''}`}
                       aria-hidden={!isCenter}
                     >
-                      <div
-                        ref={isCenter ? packageCarouselCenterFrameRef : null}
-                        className="package-slide-frame"
-                      >
+                      <div className="package-slide-frame">
                         <img
-                          key={`${offset}-${pkg.id}`}
                           src={imgSrc}
                           alt={pkg.imageAlt || ''}
                           className={pkg.imageClassName ? `package-slide-img ${pkg.imageClassName}` : 'package-slide-img'}
+                          loading="eager"
+                          decoding="async"
+                          fetchPriority={isCenter ? 'high' : 'auto'}
                         />
-                        {isCenter && (
-                          <div className="package-slide-overlay">
-                            <div className="package-slide-gradient" aria-hidden="true" />
-                            <div className="package-slide-body">
-                              <h3
-                                className={
-                                  pkg.titleClassName
-                                    ? `package-slide-name ${pkg.titleClassName}`
-                                    : 'package-slide-name'
-                                }
-                              >
-                                {pkg.title}
-                              </h3>
-                              <p className="package-slide-price">
-                                {pkg.priceLine} <strong>{pkg.priceStrong}</strong>
-                              </p>
-                              <div className="package-slide-lists">
-                                <ul className="package-slide-list">
-                                  {pkg.features.slice(0, 3).map((line) => (
-                                    <li key={line}>{line}</li>
-                                  ))}
-                                </ul>
-                                <ul className="package-slide-list">
-                                  {pkg.features.slice(3).map((line) => (
-                                    <li key={line}>{line}</li>
-                                  ))}
-                                </ul>
-                              </div>
+                        <div className={`package-slide-overlay ${isCenter ? 'is-active' : ''}`} aria-hidden={!isCenter}>
+                          <div className="package-slide-gradient" aria-hidden="true" />
+                          <div className="package-slide-body">
+                            <h3
+                              className={
+                                pkg.titleClassName
+                                  ? `package-slide-name ${pkg.titleClassName}`
+                                  : 'package-slide-name'
+                              }
+                            >
+                              {pkg.title}
+                            </h3>
+                            <p className="package-slide-price">
+                              {pkg.priceLine} <strong>{pkg.priceStrong}</strong>
+                            </p>
+                            <div className="package-slide-lists">
+                              <ul className="package-slide-list">
+                                {pkg.features.slice(0, 3).map((line) => (
+                                  <li key={line}>{line}</li>
+                                ))}
+                              </ul>
+                              <ul className="package-slide-list">
+                                {pkg.features.slice(3).map((line) => (
+                                  <li key={line}>{line}</li>
+                                ))}
+                              </ul>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
-                    </article>
+                    </CarouselItem>
                   );
                 })}
+              </CarouselContent>
+              <div className="packages-controls">
+                <div className="packages-arrows">
+                  <CarouselPrevious className="package-arrow" aria-label="Paket sebelumnya">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M15 18l-6-6 6-6"
+                        stroke="currentColor"
+                        strokeWidth="2.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </CarouselPrevious>
+                  <CarouselNext className="package-arrow" aria-label="Paket berikutnya">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M9 18l6-6-6-6"
+                        stroke="currentColor"
+                        strokeWidth="2.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </CarouselNext>
+                </div>
+                <a
+                  href="https://wa.me/c/6285171610354"
+                  className="packages-see-more"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Lihat selengkapnya
+                </a>
               </div>
-            </div>
-          </div>
-
-          <div className="packages-controls">
-            <div className="packages-arrows">
-              <button type="button" className="package-arrow" aria-label="Paket sebelumnya" onClick={packagePrev}>
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M15 18l-6-6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="2.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-              <button type="button" className="package-arrow" aria-label="Paket berikutnya" onClick={packageNext}>
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M9 18l6-6-6-6"
-                    stroke="currentColor"
-                    strokeWidth="2.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <button type="button" className="packages-see-more">
-              Lihat selengkapnya
-            </button>
+            </Carousel>
           </div>
         </div>
       </section>
