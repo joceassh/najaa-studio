@@ -3,7 +3,7 @@ import heroBerandaPhoto from './Assets/Beranda/GI MAKSI FARID AZHAR (59) FACHRI.
 import aboutTentangPhoto from './Assets/Tentang Kami/DAY00213.jpg';
 import pkgPreweddOutdoor from './Assets/Paket Foto/WJY02821.jpg';
 import pkgPreweddIndoor from './Assets/Paket Foto/Najaa Studio - Prewed Ari & Bella (177).jpg';
-import pkgPhotoKeluarga from './Assets/Paket Foto/KELUARGA MINI FITRI (12).jpg';
+import pkgPhotoKeluarga from './Assets/Paket Foto/WJY06385.jpeg';
 import pkgMaternityPhoto from './Assets/Paket Foto/KELUARGA MINI FITRI (15).jpg';
 import pkgGroupPhotoIndoor from './Assets/Paket Foto/Foto GI.png';
 import pkgGroupPhotoClass from './Assets/Paket Foto/FOTO GC.png';
