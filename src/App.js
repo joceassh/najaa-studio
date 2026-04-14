@@ -1295,8 +1295,8 @@ function HomePage() {
             </div>
             <div className="contact-link-body">
               <p className="contact-link-label">Website</p>
-              <p className="contact-link-value">najaa-studio-ksxu.vercel.app</p>
-              <a href="https://najaa-studio-ksxu.vercel.app" className="contact-link-action" target="_blank" rel="noreferrer">Visit Now</a>
+              <p className="contact-link-value">najaa-studio.vercel.app</p>
+              <a href="https://najaa-studio.vercel.app/" className="contact-link-action" target="_blank" rel="noreferrer">Visit Now</a>
             </div>
           </div>
 
@@ -1389,7 +1389,7 @@ function HomePage() {
           <div className="footer-aside">
             <div className="footer-social">
               <a
-                href="https://najaa-studio-ksxu.vercel.app"
+                href="https://najaa-studio.vercel.app/"
                 className="footer-social-btn"
                 target="_blank"
                 rel="noreferrer"
