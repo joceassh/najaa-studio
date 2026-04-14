@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Bayon&family=Kapakana&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Satukan kanvas halaman: hilangkan “garis putih” dari default putih browser / scrollbar / overscroll */
+html {
+  background-color: #f4f0ea;
+  scrollbar-color: rgba(16, 44, 87, 0.32) #f4f0ea;
+  /* Jepit sisa subpixel; bleed ulasan memakai 100% bukan 100vw sehingga tidak memotong kartu */
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f4f0ea;
+}
+
+#root {
+  min-height: 100%;
+  background-color: #f4f0ea;
+}
+
+/* Track scrollbar WebKit: bukan putih bersih di tepi viewport */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4f0ea;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 44, 87, 0.28);
+  border-radius: 999px;
+  border: 2px solid #f4f0ea;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 44, 87, 0.42);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
