@@ -30,6 +30,9 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from './components/ui/carousel';
+import { format } from 'date-fns';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import './App.css';
 
 const NAV_ITEMS = [
@@ -217,6 +220,96 @@ const REVIEW_ITEMS = [
   },
 ];
 
+const BOOKING_PACKAGE_OPTIONS = [
+  'Paket Wisuda Mini',
+  'Paket Wisuda Medi',
+  'Paket Wisuda Maksi',
+  'Paket Wisuda Plus',
+  'Paket Wisuda Outdoor',
+  'Paket Couple',
+  'Paket Prewed Indoor Basic',
+  'Paket Prewed Indoor Complete',
+  'Paket Prewed Outdoor Basic',
+  'Paket Prewed Outdoor Complete',
+  'Paket Prewedd Outdoor Plus',
+  'Pas Foto Basic (Setengah Badan)',
+  'Pas Foto Complete (Setengah Badan)',
+  'Full Body Basic',
+  'Full Body Complete',
+  'Pas Foto + Full Body Basic',
+  'Pas Foto + Full Body Complete',
+  'Foto Profil',
+  'Paket Keluarga Mini',
+  'Paket Keluarga Medi',
+  'Paket Keluarga Maksi',
+  'Paket GI Bestie',
+  'Paket GI Mini',
+  'Paket GI Medi',
+  'Paket GI Maksi',
+  'Paket GI Class',
+  'Paket GI Concept',
+  'Paket GO Mini',
+  'Paket GO Maksi',
+  'Paket GO Jumbo',
+  'Paket Self Photo Mini',
+  'Paket Self Photo Medi',
+  'Paket Self Photo Maksi',
+  'Paket Wedding Akad',
+  'Paket Wedding Bronze',
+  'Paket Wedding Silver',
+  'Paket Wedding Gold',
+  'Paket Wedding Platinum',
+];
+
+const BOOKING_TIME_OPTIONS = [
+  '08:30',
+  '09:00',
+  '09:30',
+  '10:00',
+  '10:30',
+  '11:00',
+  '11:30',
+  '12:00',
+  '12:30',
+  '13:00',
+  '13:30',
+  '14:00',
+  '14:30',
+  '15:00',
+  '15:30',
+  '16:00',
+  '16:30',
+  '17:00',
+  '17:30',
+  '18:00',
+  '18:30',
+  '19:00',
+  '19:30',
+  '20:00',
+];
+
+function formatBookingDateLabel(isoDate) {
+  if (!isoDate) return 'Pilih tanggal';
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return isoDate;
+  const date = new Date(year, month - 1, day);
+  return format(date, 'dd/MM/yyyy');
+}
+
+function parseBookingIsoDate(isoDate) {
+  if (!isoDate) return undefined;
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
+}
+
+function toBookingIsoDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function galleryPlaceholderSrc(id, variant) {
   const sizes = { portrait: '480x640', landscape: '960x540', narrow: '360x480' };
   const size = sizes[variant] || sizes.portrait;
@@ -284,9 +377,19 @@ function HomePage() {
   const [packageScrolling, setPackageScrolling] = useState(false);
   const [packageEmblaApi, setPackageEmblaApi] = useState(null);
   const [reviewDotPage, setReviewDotPage] = useState(0);
+  const [dateComboboxOpen, setDateComboboxOpen] = useState(false);
+  const [timeComboboxOpen, setTimeComboboxOpen] = useState(false);
+  const [packageComboboxOpen, setPackageComboboxOpen] = useState(false);
+  const [packageComboboxQuery, setPackageComboboxQuery] = useState('');
   const reviewTrackRef = useRef(null);
+  const dateComboboxRef = useRef(null);
+  const timeComboboxRef = useRef(null);
+  const packageComboboxRef = useRef(null);
   const isPasPhotoActive = PACKAGE_ITEMS[packageSlide]?.id === 'pas-photo';
   const isGroupPhotoClassActive = PACKAGE_ITEMS[packageSlide]?.id === 'group-photo-class';
+  const filteredPackageOptions = BOOKING_PACKAGE_OPTIONS.filter((item) =>
+    item.toLowerCase().includes(packageComboboxQuery.toLowerCase().trim())
+  );
 
   useEffect(() => {
     const preloadedImages = PACKAGE_ITEMS.map((item) => {
@@ -313,6 +416,7 @@ function HomePage() {
     paket: '',
     jumlah: '',
   });
+  const selectedBookingDate = parseBookingIsoDate(bookingForm.tanggal);
 
   const handleBookingChange = (e) => {
     const { name, value } = e.target;
@@ -323,6 +427,10 @@ function HomePage() {
     e.preventDefault();
 
     const { nama, tanggal, jam, paket, jumlah } = bookingForm;
+    if (!nama.trim() || !tanggal || !jam || !paket.trim()) {
+      window.alert('Lengkapi nama, tanggal, jam, dan paket terlebih dahulu.');
+      return;
+    }
 
     // Format tanggal agar lebih mudah dibaca (YYYY-MM-DD → DD/MM/YYYY)
     const tglFormatted = tanggal
@@ -341,6 +449,27 @@ function HomePage() {
     const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(pesan)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
+
+  useEffect(() => {
+    if (!dateComboboxOpen && !timeComboboxOpen && !packageComboboxOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (!dateComboboxRef.current?.contains(event.target)) {
+        setDateComboboxOpen(false);
+      }
+      if (!timeComboboxRef.current?.contains(event.target)) {
+        setTimeComboboxOpen(false);
+      }
+      if (!packageComboboxRef.current?.contains(event.target)) {
+        setPackageComboboxOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dateComboboxOpen, timeComboboxOpen, packageComboboxOpen]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -822,41 +951,234 @@ function HomePage() {
               <div className="contact-row">
                 <div className="contact-field">
                   <label className="contact-label" htmlFor="book-tanggal">Tanggal</label>
-                  <input
-                    id="book-tanggal"
-                    className="contact-input"
-                    type="date"
-                    name="tanggal"
-                    value={bookingForm.tanggal}
-                    onChange={handleBookingChange}
-                    required
-                  />
+                  <div ref={dateComboboxRef} style={{ position: 'relative' }}>
+                    <button
+                      id="book-tanggal"
+                      type="button"
+                      className="contact-input contact-date-trigger contact-date-trigger--outline"
+                      data-empty={!bookingForm.tanggal}
+                      aria-haspopup="listbox"
+                      aria-expanded={dateComboboxOpen}
+                      onClick={() => {
+                        setDateComboboxOpen((prev) => !prev);
+                        setTimeComboboxOpen(false);
+                        setPackageComboboxOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span className="contact-date-trigger-label">
+                        {bookingForm.tanggal ? formatBookingDateLabel(bookingForm.tanggal) : 'Pilih tanggal'}
+                      </span>
+                      <span aria-hidden="true">▾</span>
+                    </button>
+                    {dateComboboxOpen && (
+                      <div className="booking-date-popover booking-date-popover--start">
+                        <DayPicker
+                          mode="single"
+                          selected={selectedBookingDate}
+                          onSelect={(date) => {
+                            if (!date) return;
+                            setBookingForm((prev) => ({ ...prev, tanggal: toBookingIsoDate(date) }));
+                            setDateComboboxOpen(false);
+                          }}
+                          disabled={{ before: new Date() }}
+                          defaultMonth={selectedBookingDate}
+                          className="booking-calendar"
+                        />
+                      </div>
+                    )}
+                    <input type="hidden" name="tanggal" value={bookingForm.tanggal} />
+                  </div>
                 </div>
                 <div className="contact-field">
                   <label className="contact-label" htmlFor="book-jam">Jam</label>
-                  <input
-                    id="book-jam"
-                    className="contact-input"
-                    type="time"
-                    name="jam"
-                    value={bookingForm.jam}
-                    onChange={handleBookingChange}
-                    required
-                  />
+                  <div ref={timeComboboxRef} style={{ position: 'relative' }}>
+                    <button
+                      id="book-jam"
+                      type="button"
+                      className="contact-input"
+                      aria-haspopup="listbox"
+                      aria-expanded={timeComboboxOpen}
+                      onClick={() => {
+                        setTimeComboboxOpen((prev) => !prev);
+                        setDateComboboxOpen(false);
+                        setPackageComboboxOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>{bookingForm.jam || 'Pilih jam'}</span>
+                      <span aria-hidden="true">▾</span>
+                    </button>
+                    {timeComboboxOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          left: 0,
+                          right: 0,
+                          background: '#fff',
+                          border: '1px solid #d8d8d8',
+                          borderRadius: 12,
+                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
+                          zIndex: 12000,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <ul
+                          role="listbox"
+                          aria-label="Daftar jam booking"
+                          style={{
+                            listStyle: 'none',
+                            margin: 0,
+                            padding: 6,
+                            maxHeight: 220,
+                            overflowY: 'auto',
+                          }}
+                        >
+                          {BOOKING_TIME_OPTIONS.map((time) => (
+                            <li key={time}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBookingForm((prev) => ({ ...prev, jam: time }));
+                                  setTimeComboboxOpen(false);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  border: 0,
+                                  background: 'transparent',
+                                  textAlign: 'left',
+                                  borderRadius: 8,
+                                  padding: '10px 12px',
+                                  fontSize: 14,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {time}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    <input type="hidden" name="jam" value={bookingForm.jam} />
+                  </div>
                 </div>
               </div>
               <div className="contact-row">
                 <div className="contact-field">
                   <label className="contact-label" htmlFor="book-paket">Paket</label>
-                  <input
-                    id="book-paket"
-                    className="contact-input"
-                    type="text"
-                    name="paket"
-                    value={bookingForm.paket}
-                    onChange={handleBookingChange}
-                    placeholder="mis. Prewedding Indoor"
-                  />
+                  <div
+                    ref={packageComboboxRef}
+                    style={{ position: 'relative' }}
+                  >
+                    <button
+                      id="book-paket"
+                      type="button"
+                      className="contact-input"
+                      aria-haspopup="listbox"
+                      aria-expanded={packageComboboxOpen}
+                      onClick={() => setPackageComboboxOpen((prev) => !prev)}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>{bookingForm.paket || 'Pilih paket foto'}</span>
+                      <span aria-hidden="true">▾</span>
+                    </button>
+
+                    {packageComboboxOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          left: 0,
+                          right: 0,
+                          background: '#fff',
+                          border: '1px solid #d8d8d8',
+                          borderRadius: 12,
+                          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)',
+                          zIndex: 12000,
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <input
+                          type="text"
+                          className="contact-input"
+                          placeholder="Cari paket..."
+                          value={packageComboboxQuery}
+                          onChange={(e) => setPackageComboboxQuery(e.target.value)}
+                          style={{
+                            borderRadius: 0,
+                            border: 0,
+                            borderBottom: '1px solid #ececec',
+                          }}
+                        />
+                        <ul
+                          role="listbox"
+                          aria-label="Daftar paket foto"
+                          style={{
+                            listStyle: 'none',
+                            margin: 0,
+                            padding: 6,
+                            maxHeight: 220,
+                            overflowY: 'auto',
+                          }}
+                        >
+                          {filteredPackageOptions.length ? (
+                            filteredPackageOptions.map((item) => (
+                              <li key={item}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setBookingForm((prev) => ({ ...prev, paket: item }));
+                                    setPackageComboboxOpen(false);
+                                    setPackageComboboxQuery('');
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    border: 0,
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    borderRadius: 8,
+                                    padding: '10px 12px',
+                                    fontSize: 14,
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  {item}
+                                </button>
+                              </li>
+                            ))
+                          ) : (
+                            <li style={{ padding: '10px 12px', color: '#777' }}>
+                              Paket tidak ditemukan.
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+                    <input type="hidden" name="paket" value={bookingForm.paket} />
+                  </div>
                 </div>
                 <div className="contact-field">
                   <label className="contact-label" htmlFor="book-jumlah">Jumlah Orang</label>

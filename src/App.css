@@ -462,10 +462,10 @@
   box-sizing: border-box;
   border-radius: var(--radius);
   padding: clamp(12px, 1.8vw, 18px) var(--about-pad-x);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.38);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .about-card-lead {
@@ -1518,6 +1518,9 @@
   border-radius: var(--radius);
   padding: clamp(24px, 3.5vw, 36px) clamp(20px, 3vw, 32px);
   box-shadow: 0 4px 24px rgba(16, 44, 87, 0.07);
+  position: relative;
+  overflow: visible;
+  z-index: 2;
 }
 
 .contact-form {
@@ -1610,6 +1613,178 @@
 .contact-submit:hover {
   opacity: 0.88;
   box-shadow: 0 8px 24px rgba(16, 44, 87, 0.44), 0 3px 8px rgba(0, 0, 0, 0.14);
+}
+
+.booking-calendar {
+  --rdp-accent-color: #102c57;
+  --rdp-accent-background-color: #102c57;
+  --rdp-day-height: 34px;
+  --rdp-day-width: 34px;
+  --rdp-day_button-height: 32px;
+  --rdp-day_button-width: 32px;
+  --rdp-nav_button-height: 28px;
+  --rdp-nav_button-width: 28px;
+  --rdp-months-gap: 0;
+  --rdp-selected-border: transparent;
+  margin: 8px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.booking-calendar .rdp-root {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.booking-calendar .rdp-month {
+  margin: 0;
+}
+
+.booking-calendar .rdp-caption,
+.booking-calendar .rdp-month_caption {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 2px;
+  font-size: 14px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: #102c57;
+  margin-bottom: 8px;
+}
+
+.booking-calendar .rdp-caption_label {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.booking-calendar .rdp-nav {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.booking-calendar .rdp-weekday {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(16, 44, 87, 0.55);
+  height: 28px;
+}
+
+.booking-calendar .rdp-day_button {
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #102c57;
+  border: 0;
+  transition: background-color 0.16s ease, color 0.16s ease, font-weight 0.16s ease;
+}
+
+.booking-calendar .rdp-day_button:hover {
+  background: rgba(16, 44, 87, 0.08);
+}
+
+.booking-calendar .rdp-selected .rdp-day_button {
+  background: #102c57 !important;
+  color: #fff !important;
+  font-weight: 500;
+}
+
+.booking-calendar .rdp-today .rdp-day_button {
+  border: 1px solid rgba(16, 44, 87, 0.22);
+  font-weight: 500;
+}
+
+.booking-calendar .rdp-disabled .rdp-day_button {
+  background: transparent !important;
+  color: rgba(16, 44, 87, 0.35);
+}
+
+.contact-date-trigger {
+  border: 1px solid rgba(16, 44, 87, 0.14);
+  background: #f0dfc8;
+  font-weight: 400;
+  min-height: 40px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.contact-date-trigger[data-empty='true'] .contact-date-trigger-label {
+  color: rgba(16, 44, 87, 0.55);
+}
+
+.contact-date-trigger--outline {
+  border: 1px solid rgba(16, 44, 87, 0.22);
+}
+
+.contact-date-trigger:hover,
+.contact-date-trigger:focus-visible {
+  background: #f5e8d5;
+}
+
+.contact-date-trigger > span[aria-hidden='true'] {
+  margin-left: auto;
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.booking-date-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: auto;
+  min-width: 280px;
+  background: #fff;
+  border: 1px solid rgba(16, 44, 87, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  z-index: 12000;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.booking-date-popover--start {
+  left: 0;
+  right: auto;
+}
+
+.booking-calendar .rdp-button_previous,
+.booking-calendar .rdp-button_next {
+  position: static !important;
+  transform: none;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #102c57;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.booking-calendar .rdp-button_previous {
+  margin-left: -2px;
+}
+
+.booking-calendar .rdp-button_next {
+  margin-right: -2px;
+}
+
+.booking-calendar .rdp-button_previous:hover,
+.booking-calendar .rdp-button_next:hover {
+  background: rgba(16, 44, 87, 0.06);
 }
 
 /* Baris link kontak bawah */
