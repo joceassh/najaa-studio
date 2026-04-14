@@ -1209,9 +1209,10 @@
 
 /* Baris utama: kolom kiri + area scroll */
 .review-body {
-  /* 100% = lebar konten dalam padding section; bleed = sisi kanan body terpusat + padding → tepi viewport */
+  /* 100% = lebar konten dalam padding section; bleed = padding section + sisa lebar di luar kolom max.
+   * postcss-calc di webpack tidak bisa parse min()/max() bersarang; pakai max() + calc() satu level. */
   --review-right-bleed: calc(
-    var(--section-pad-x) + max(0px, (100% - min(var(--section-content-max), 100%)) / 2)
+    var(--section-pad-x) + max(0px, calc((100% - 1180px) / 2))
   );
   --review-col-left: clamp(160px, 18vw, 230px);
   --review-col-gap: clamp(12px, 2vw, 24px);

@@ -23,7 +23,7 @@ export function Carousel({ orientation = 'horizontal', opts, setApi, className, 
 
   return (
     <CarouselContext.Provider value={{ carouselRef, api, orientation, scrollPrev, scrollNext }}>
-      <section className={cx('shadcn-carousel', className)} role="region" aria-roledescription="carousel" {...props}>
+      <section className={cx('shadcn-carousel', className)} aria-roledescription="carousel" {...props}>
         {children}
       </section>
     </CarouselContext.Provider>

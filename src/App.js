@@ -392,18 +392,13 @@ function HomePage() {
   );
 
   useEffect(() => {
-    const preloadedImages = PACKAGE_ITEMS.map((item) => {
+    PACKAGE_ITEMS.forEach((item) => {
       const img = new Image();
       img.decoding = 'async';
       img.src = item.image;
-      return img;
     });
-
-    return () => {
-      preloadedImages.forEach((img) => {
-        img.src = '';
-      });
-    };
+    // Jangan kosongkan img.src di cleanup: di React Strict Mode (dev) effect mount → unmount → mount
+    // membatalkan request/decode untuk URL yang sama dengan <img src> di carousel → slot foto biru kosong.
   }, []);
 
   /* ── Form booking ── */
@@ -735,16 +730,15 @@ function HomePage() {
                     <CarouselItem
                       key={pkg.id}
                       className={`package-slide ${isCenter ? 'is-active' : ''} ${isPrev ? 'is-prev' : ''} ${isNext ? 'is-next' : ''}`}
-                      aria-hidden={!isCenter}
                     >
                       <div className="package-slide-frame">
                         <img
                           src={imgSrc}
-                          alt={pkg.imageAlt || ''}
+                          alt={isCenter ? (pkg.imageAlt || '') : ''}
                           className={pkg.imageClassName ? `package-slide-img ${pkg.imageClassName}` : 'package-slide-img'}
                           loading="eager"
-                          decoding="async"
-                          fetchPriority={isCenter ? 'high' : 'auto'}
+                          decoding="sync"
+                          fetchPriority="high"
                         />
                         <div className={`package-slide-overlay ${isCenter ? 'is-active' : ''}`} aria-hidden={!isCenter}>
                           <div className="package-slide-gradient" aria-hidden="true" />
