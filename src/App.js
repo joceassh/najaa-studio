@@ -260,33 +260,11 @@ const BOOKING_PACKAGE_OPTIONS = [
   'Paket Wedding Gold',
   'Paket Wedding Platinum',
 ];
-
-const BOOKING_TIME_OPTIONS = [
-  '08:30',
-  '09:00',
-  '09:30',
-  '10:00',
-  '10:30',
-  '11:00',
-  '11:30',
-  '12:00',
-  '12:30',
-  '13:00',
-  '13:30',
-  '14:00',
-  '14:30',
-  '15:00',
-  '15:30',
-  '16:00',
-  '16:30',
-  '17:00',
-  '17:30',
-  '18:00',
-  '18:30',
-  '19:00',
-  '19:30',
-  '20:00',
-];
+const BOOKING_HOUR_OPTIONS = Array.from({ length: 24 }, (_, idx) => String(idx).padStart(2, '0'));
+const BOOKING_MINUTE_OPTIONS = Array.from({ length: 60 }, (_, idx) =>
+  String(idx).padStart(2, '0')
+);
+const TIME_WHEEL_ITEM_HEIGHT = 36;
 
 function formatBookingDateLabel(isoDate) {
   if (!isoDate) return 'Pilih tanggal';
@@ -379,11 +357,19 @@ function HomePage() {
   const [reviewDotPage, setReviewDotPage] = useState(0);
   const [dateComboboxOpen, setDateComboboxOpen] = useState(false);
   const [timeComboboxOpen, setTimeComboboxOpen] = useState(false);
+  const [timeDraftHour, setTimeDraftHour] = useState('00');
+  const [timeDraftMinute, setTimeDraftMinute] = useState('00');
   const [packageComboboxOpen, setPackageComboboxOpen] = useState(false);
   const [packageComboboxQuery, setPackageComboboxQuery] = useState('');
   const reviewTrackRef = useRef(null);
   const dateComboboxRef = useRef(null);
   const timeComboboxRef = useRef(null);
+  const timeHourWheelRef = useRef(null);
+  const timeMinuteWheelRef = useRef(null);
+  const timeDraftHourRef = useRef('00');
+  const timeDraftMinuteRef = useRef('00');
+  const timeHourScrollRafRef = useRef(0);
+  const timeMinuteScrollRafRef = useRef(0);
   const packageComboboxRef = useRef(null);
   const isPasPhotoActive = PACKAGE_ITEMS[packageSlide]?.id === 'pas-photo';
   const isGroupPhotoClassActive = PACKAGE_ITEMS[packageSlide]?.id === 'group-photo-class';
@@ -412,6 +398,27 @@ function HomePage() {
     jumlah: '',
   });
   const selectedBookingDate = parseBookingIsoDate(bookingForm.tanggal);
+  const applyBookingTime = (nextHour, nextMinute) => {
+    if (nextHour && nextMinute) {
+      setBookingForm((prev) => ({ ...prev, jam: `${nextHour}:${nextMinute}` }));
+      return;
+    }
+    setBookingForm((prev) => ({ ...prev, jam: '' }));
+  };
+  const saveBookingTime = () => {
+    applyBookingTime(timeDraftHour, timeDraftMinute);
+    setTimeComboboxOpen(false);
+  };
+  const handleTimeWheelScroll = (event, options, currentValue, setter, rafRef) => {
+    const scrollTop = event.currentTarget.scrollTop;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const index = Math.round(scrollTop / TIME_WHEEL_ITEM_HEIGHT);
+      const next = options[Math.max(0, Math.min(options.length - 1, index))];
+      if (next && next !== currentValue) setter(next);
+      rafRef.current = 0;
+    });
+  };
 
   const handleBookingChange = (e) => {
     const { name, value } = e.target;
@@ -465,6 +472,36 @@ function HomePage() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [dateComboboxOpen, timeComboboxOpen, packageComboboxOpen]);
+
+  useEffect(() => {
+    timeDraftHourRef.current = timeDraftHour;
+  }, [timeDraftHour]);
+
+  useEffect(() => {
+    timeDraftMinuteRef.current = timeDraftMinute;
+  }, [timeDraftMinute]);
+
+  useEffect(() => {
+    if (!timeComboboxOpen) return;
+    const hourIndex = Math.max(0, BOOKING_HOUR_OPTIONS.indexOf(timeDraftHourRef.current));
+    const minuteIndex = Math.max(0, BOOKING_MINUTE_OPTIONS.indexOf(timeDraftMinuteRef.current));
+    requestAnimationFrame(() => {
+      if (timeHourWheelRef.current) {
+        timeHourWheelRef.current.scrollTop = hourIndex * TIME_WHEEL_ITEM_HEIGHT;
+      }
+      if (timeMinuteWheelRef.current) {
+        timeMinuteWheelRef.current.scrollTop = minuteIndex * TIME_WHEEL_ITEM_HEIGHT;
+      }
+    });
+  }, [timeComboboxOpen]);
+
+  useEffect(
+    () => () => {
+      if (timeHourScrollRafRef.current) cancelAnimationFrame(timeHourScrollRafRef.current);
+      if (timeMinuteScrollRafRef.current) cancelAnimationFrame(timeMinuteScrollRafRef.current);
+    },
+    []
+  );
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -998,10 +1035,14 @@ function HomePage() {
                       id="book-jam"
                       type="button"
                       className="contact-input"
+                      data-empty={!bookingForm.jam}
                       aria-haspopup="listbox"
                       aria-expanded={timeComboboxOpen}
                       onClick={() => {
                         setTimeComboboxOpen((prev) => !prev);
+                        const [existingHour = '', existingMinute = ''] = bookingForm.jam.split(':');
+                        setTimeDraftHour(existingHour || '00');
+                        setTimeDraftMinute(existingMinute || '00');
                         setDateComboboxOpen(false);
                         setPackageComboboxOpen(false);
                       }}
@@ -1014,11 +1055,12 @@ function HomePage() {
                         alignItems: 'center',
                       }}
                     >
-                      <span>{bookingForm.jam || 'Pilih jam'}</span>
+                      <span className="contact-combobox-label">{bookingForm.jam || 'Pilih jam'}</span>
                       <span aria-hidden="true">▾</span>
                     </button>
                     {timeComboboxOpen && (
                       <div
+                        className="booking-time-popover"
                         style={{
                           position: 'absolute',
                           top: 'calc(100% + 8px)',
@@ -1032,41 +1074,82 @@ function HomePage() {
                           overflow: 'hidden',
                         }}
                       >
-                        <ul
-                          role="listbox"
-                          aria-label="Daftar jam booking"
-                          style={{
-                            listStyle: 'none',
-                            margin: 0,
-                            padding: 6,
-                            maxHeight: 220,
-                            overflowY: 'auto',
-                          }}
-                        >
-                          {BOOKING_TIME_OPTIONS.map((time) => (
-                            <li key={time}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setBookingForm((prev) => ({ ...prev, jam: time }));
-                                  setTimeComboboxOpen(false);
-                                }}
-                                style={{
-                                  width: '100%',
-                                  border: 0,
-                                  background: 'transparent',
-                                  textAlign: 'left',
-                                  borderRadius: 8,
-                                  padding: '10px 12px',
-                                  fontSize: 14,
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                {time}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="booking-time-title">Pilih jam</p>
+                        <div className="booking-time-wheel">
+                          <div className="booking-time-wheel-col" role="listbox" aria-label="Pilih jam">
+                            <div
+                              ref={timeHourWheelRef}
+                              className="booking-time-wheel-scroll"
+                              onScroll={(event) =>
+                                handleTimeWheelScroll(
+                                  event,
+                                  BOOKING_HOUR_OPTIONS,
+                                  timeDraftHour,
+                                  setTimeDraftHour,
+                                  timeHourScrollRafRef
+                                )
+                              }
+                            >
+                              <div className="booking-time-wheel-spacer" aria-hidden="true" />
+                              {BOOKING_HOUR_OPTIONS.map((hour) => (
+                                <button
+                                  key={`hour-${hour}`}
+                                  type="button"
+                                  className={`booking-time-wheel-item ${timeDraftHour === hour ? 'is-active' : ''}`}
+                                  onClick={() => setTimeDraftHour(hour)}
+                                >
+                                  {hour}
+                                </button>
+                              ))}
+                              <div className="booking-time-wheel-spacer" aria-hidden="true" />
+                            </div>
+                          </div>
+                          <span className="booking-time-separator">:</span>
+                          <div className="booking-time-wheel-col" role="listbox" aria-label="Pilih menit">
+                            <div
+                              ref={timeMinuteWheelRef}
+                              className="booking-time-wheel-scroll"
+                              onScroll={(event) =>
+                                handleTimeWheelScroll(
+                                  event,
+                                  BOOKING_MINUTE_OPTIONS,
+                                  timeDraftMinute,
+                                  setTimeDraftMinute,
+                                  timeMinuteScrollRafRef
+                                )
+                              }
+                            >
+                              <div className="booking-time-wheel-spacer" aria-hidden="true" />
+                              {BOOKING_MINUTE_OPTIONS.map((minute) => (
+                                <button
+                                  key={`minute-${minute}`}
+                                  type="button"
+                                  className={`booking-time-wheel-item ${timeDraftMinute === minute ? 'is-active' : ''}`}
+                                  onClick={() => setTimeDraftMinute(minute)}
+                                >
+                                  {minute}
+                                </button>
+                              ))}
+                              <div className="booking-time-wheel-spacer" aria-hidden="true" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="booking-time-actions">
+                          <button
+                            type="button"
+                            className="booking-time-action"
+                            onClick={() => setTimeComboboxOpen(false)}
+                          >
+                            Batal
+                          </button>
+                          <button
+                            type="button"
+                            className="booking-time-action is-primary"
+                            onClick={saveBookingTime}
+                          >
+                            Simpan
+                          </button>
+                        </div>
                       </div>
                     )}
                     <input type="hidden" name="jam" value={bookingForm.jam} />
@@ -1084,9 +1167,14 @@ function HomePage() {
                       id="book-paket"
                       type="button"
                       className="contact-input"
+                      data-empty={!bookingForm.paket}
                       aria-haspopup="listbox"
                       aria-expanded={packageComboboxOpen}
-                      onClick={() => setPackageComboboxOpen((prev) => !prev)}
+                      onClick={() => {
+                        setPackageComboboxOpen((prev) => !prev);
+                        setDateComboboxOpen(false);
+                        setTimeComboboxOpen(false);
+                      }}
                       style={{
                         width: '100%',
                         textAlign: 'left',
@@ -1096,7 +1184,7 @@ function HomePage() {
                         alignItems: 'center',
                       }}
                     >
-                      <span>{bookingForm.paket || 'Pilih paket foto'}</span>
+                      <span className="contact-combobox-label">{bookingForm.paket || 'Pilih paket foto'}</span>
                       <span aria-hidden="true">▾</span>
                     </button>
 
@@ -1207,8 +1295,8 @@ function HomePage() {
             </div>
             <div className="contact-link-body">
               <p className="contact-link-label">Website</p>
-              <p className="contact-link-value">www.loremipsum.id</p>
-              <a href="https://loremipsum.id" className="contact-link-action" target="_blank" rel="noreferrer">Visit Now</a>
+              <p className="contact-link-value">najaa-studio-ksxu.vercel.app</p>
+              <a href="https://najaa-studio-ksxu.vercel.app" className="contact-link-action" target="_blank" rel="noreferrer">Visit Now</a>
             </div>
           </div>
 
@@ -1301,7 +1389,7 @@ function HomePage() {
           <div className="footer-aside">
             <div className="footer-social">
               <a
-                href="https://loremipsum.id"
+                href="https://najaa-studio-ksxu.vercel.app"
                 className="footer-social-btn"
                 target="_blank"
                 rel="noreferrer"
