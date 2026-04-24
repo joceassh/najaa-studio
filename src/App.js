@@ -631,36 +631,38 @@ function HomePage() {
         aria-label="Navigasi utama"
         data-logo-on-light={logoOnLightBg ? 'true' : 'false'}
       >
-        <a
-          href="#beranda"
-          className="brand"
-          onClick={(e) => {
-            e.preventDefault();
-            handleScrollTo('beranda');
-          }}
-          aria-label="Najaa Studio — Beranda"
-        >
-          <span
-            className="brand-logo-mask"
-            style={{
-              WebkitMaskImage: `url(${JSON.stringify(logoSrc)})`,
-              maskImage: `url(${JSON.stringify(logoSrc)})`,
-            }}
-            aria-hidden="true"
-          />
-        </a>
         <div className="nav-glass" style={{ '--active-index': activeIndex < 0 ? 0 : activeIndex }}>
-          <span className="nav-indicator" />
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`nav-btn ${activeSection === item.id ? 'is-active' : ''}`}
-              onClick={() => handleScrollTo(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+          <a
+            href="#beranda"
+            className="brand"
+            onClick={(e) => {
+              e.preventDefault();
+              handleScrollTo('beranda');
+            }}
+            aria-label="Najaa Studio — Beranda"
+          >
+            <span
+              className="brand-logo-mask"
+              style={{
+                WebkitMaskImage: `url(${JSON.stringify(logoSrc)})`,
+                maskImage: `url(${JSON.stringify(logoSrc)})`,
+              }}
+              aria-hidden="true"
+            />
+          </a>
+          <div className="nav-items">
+            <span className="nav-indicator" />
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`nav-btn ${activeSection === item.id ? 'is-active' : ''}`}
+                onClick={() => handleScrollTo(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
 

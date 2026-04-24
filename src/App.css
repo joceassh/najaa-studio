@@ -155,8 +155,8 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-left: clamp(12px, 2.2vw, 20px);
-  margin-right: clamp(12px, 2.2vw, 20px);
+  padding-left: clamp(10px, 1.6vw, 16px);
+  margin: 0;
   line-height: 0;
   text-decoration: none;
   color: inherit;
@@ -191,9 +191,10 @@
   --active-index: 0;
   width: min(980px, 96vw);
   min-height: 42px;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0;
+  gap: clamp(12px, 2vw, 18px);
   border-radius: 9999px;
   /* Lebih legibel dari 0.38, tetap glass (blur + border halus) */
   background: rgba(255, 255, 255, 0.56);
@@ -2217,13 +2218,13 @@
     width: 100%;
     max-width: none;
     min-height: 40px;
-    gap: 0;
-    padding: 4px clamp(8px, 3vw, 12px);
+    gap: clamp(8px, 2vw, 12px);
+    padding: 4px clamp(10px, 3vw, 14px);
   }
 
   .brand {
-    margin-left: clamp(8px, 3vw, 12px);
-    margin-right: clamp(8px, 3vw, 12px);
+    margin: 0;
+    padding-left: clamp(8px, 2.2vw, 12px);
   }
 
   .nav-items {
