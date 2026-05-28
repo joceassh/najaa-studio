@@ -2324,6 +2324,10 @@
     max-width: min(148px, 52vw);
   }
 
+  .top-nav[data-logo-on-light='false'] .mobile-nav-header .brand-logo-mask {
+    background-color: #ffffff;
+  }
+
   .mobile-nav-toggle {
     flex-shrink: 0;
     display: inline-flex;
