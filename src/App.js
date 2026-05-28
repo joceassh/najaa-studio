@@ -349,6 +349,7 @@ function HomePage() {
     { id: 11, variant: 'portrait', src: galeri11 },
   ];
   const [activeSection, setActiveSection] = useState('beranda');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [logoOnLightBg, setLogoOnLightBg] = useState(true);
   const [packageSlide, setPackageSlide] = useState(0);
   const [packageDragging, setPackageDragging] = useState(false);
@@ -552,6 +553,20 @@ function HomePage() {
     };
   }, [activeSection]);
 
+  useEffect(() => {
+    if (!mobileNavOpen) return undefined;
+    const prevOverflow = document.body.style.overflow;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileNavOpen]);
+
   const syncReviewDotFromTrack = () => {
     const el = reviewTrackRef.current;
     if (!el) return;
@@ -622,57 +637,111 @@ function HomePage() {
     window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   };
 
+  const handleNavSelect = (id) => {
+    handleScrollTo(id);
+    setMobileNavOpen(false);
+  };
+
   const logoSrc = `${process.env.PUBLIC_URL}/najaa-studio-logo.png`;
+  const navActiveIndex = activeIndex < 0 ? 0 : activeIndex;
+
+  const renderBrandLink = () => (
+    <a
+      href="#beranda"
+      className="brand"
+      onClick={(e) => {
+        e.preventDefault();
+        handleNavSelect('beranda');
+      }}
+      aria-label="Najaa Studio — Beranda"
+    >
+      <span
+        className="brand-logo-mask"
+        style={{
+          WebkitMaskImage: `url(${JSON.stringify(logoSrc)})`,
+          maskImage: `url(${JSON.stringify(logoSrc)})`,
+        }}
+        aria-hidden="true"
+      />
+    </a>
+  );
+
+  const renderNavButtons = (instance) =>
+    NAV_ITEMS.map((item) => (
+      <button
+        key={`${instance}-${item.id}`}
+        type="button"
+        className={`nav-btn ${activeSection === item.id ? 'is-active' : ''}`}
+        onClick={() => handleNavSelect(item.id)}
+      >
+        {item.label}
+      </button>
+    ));
 
   return (
     <main className="landing-page">
       <nav
-        className="top-nav"
+        className={`top-nav ${mobileNavOpen ? 'is-mobile-menu-open' : ''}`}
         aria-label="Navigasi utama"
         data-logo-on-light={logoOnLightBg ? 'true' : 'false'}
       >
-        <a
-          href="#beranda"
-          className="brand"
-          onClick={(e) => {
-            e.preventDefault();
-            handleScrollTo('beranda');
-          }}
-          aria-label="Najaa Studio — Beranda"
+        <div className="mobile-nav-header">
+          {renderBrandLink()}
+          <button
+            type="button"
+            className={`mobile-nav-toggle ${mobileNavOpen ? 'is-open' : ''}`}
+            aria-label={mobileNavOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
+            aria-expanded={mobileNavOpen}
+            aria-controls="site-mobile-nav"
+            onClick={() => setMobileNavOpen((prev) => !prev)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+        <button
+          type="button"
+          className={`mobile-nav-backdrop ${mobileNavOpen ? 'is-open' : ''}`}
+          aria-label="Tutup menu"
+          onClick={() => setMobileNavOpen(false)}
+        />
+        <div
+          id="site-mobile-nav"
+          className={`mobile-nav-panel ${mobileNavOpen ? 'is-open' : ''}`}
+          aria-hidden={!mobileNavOpen}
         >
-          <span
-            className="brand-logo-mask"
-            style={{
-              WebkitMaskImage: `url(${JSON.stringify(logoSrc)})`,
-              maskImage: `url(${JSON.stringify(logoSrc)})`,
-            }}
-            aria-hidden="true"
-          />
-        </a>
-        <div className="nav-glass" style={{ '--active-index': activeIndex < 0 ? 0 : activeIndex }}>
-          <span className="nav-indicator" />
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`nav-btn ${activeSection === item.id ? 'is-active' : ''}`}
-              onClick={() => handleScrollTo(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+          <div
+            className="nav-glass nav-glass--mobile-menu"
+            style={{ '--active-index': navActiveIndex }}
+          >
+            <div className="nav-items nav-items--mobile-menu">
+              <span className="nav-indicator" />
+              {renderNavButtons('mobile')}
+            </div>
+          </div>
+        </div>
+        <div
+          className="nav-glass nav-glass--desktop"
+          style={{ '--active-index': navActiveIndex }}
+        >
+          {renderBrandLink()}
+          <div className="nav-items">
+            <span className="nav-indicator" />
+            {renderNavButtons('desktop')}
+          </div>
         </div>
       </nav>
 
       <section id="beranda" className="hero page-section">
-        <div className="hero-overlay" />
         <img
           className="hero-bg"
           src={heroBerandaPhoto}
           alt="Tim Najaa Studio — foto grup di studio"
         />
-
-        <div className="hero-content">
+        <div className="hero-foreground">
+          <div className="hero-overlay" aria-hidden="true" />
+          <div className="hero-content">
           <h1 className="hero-title">
             <span className="visually-hidden">Abadikan setiap momen dengan sempurna</span>
             <span className="hero-title-display" aria-hidden="true">
@@ -688,6 +757,7 @@ function HomePage() {
               setiap cerita, ekspresi, dan kenangan tersimpan dengan indah dan penuh makna.
             </span>
           </p>
+          </div>
         </div>
       </section>
 
