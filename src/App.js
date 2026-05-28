@@ -372,6 +372,8 @@ function HomePage() {
   const timeHourScrollRafRef = useRef(0);
   const timeMinuteScrollRafRef = useRef(0);
   const packageComboboxRef = useRef(null);
+  const manualActiveSectionRef = useRef(null);
+  const manualActiveUntilRef = useRef(0);
   const isPasPhotoActive = PACKAGE_ITEMS[packageSlide]?.id === 'pas-photo';
   const isGroupPhotoClassActive = PACKAGE_ITEMS[packageSlide]?.id === 'group-photo-class';
   const filteredPackageOptions = BOOKING_PACKAGE_OPTIONS.filter((item) =>
@@ -507,6 +509,20 @@ function HomePage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
+        if (
+          manualActiveSectionRef.current &&
+          Date.now() < manualActiveUntilRef.current
+        ) {
+          setActiveSection((prev) =>
+            prev !== manualActiveSectionRef.current ? manualActiveSectionRef.current : prev
+          );
+          return;
+        }
+
+        if (manualActiveSectionRef.current && Date.now() >= manualActiveUntilRef.current) {
+          manualActiveSectionRef.current = null;
+        }
+
         const mostVisible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -566,6 +582,16 @@ function HomePage() {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [mobileNavOpen]);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 768) {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const syncReviewDotFromTrack = () => {
     const el = reviewTrackRef.current;
@@ -638,6 +664,9 @@ function HomePage() {
   };
 
   const handleNavSelect = (id) => {
+    manualActiveSectionRef.current = id;
+    manualActiveUntilRef.current = Date.now() + 1000;
+    setActiveSection(id);
     handleScrollTo(id);
     setMobileNavOpen(false);
   };
@@ -709,7 +738,6 @@ function HomePage() {
         <div
           id="site-mobile-nav"
           className={`mobile-nav-panel ${mobileNavOpen ? 'is-open' : ''}`}
-          aria-hidden={!mobileNavOpen}
         >
           <div
             className="nav-glass nav-glass--mobile-menu"

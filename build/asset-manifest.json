@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.859ba3f7.css",
-    "main.js": "/static/js/main.191f6c2a.js",
+    "main.css": "/static/css/main.1502edec.css",
+    "main.js": "/static/js/main.a19b1624.js",
     "static/js/453.8fd00af2.chunk.js": "/static/js/453.8fd00af2.chunk.js",
     "static/media/NJA08760.JPG": "/static/media/NJA08760.dda43554e00024d494d3.JPG",
     "static/media/WJY02821.jpg": "/static/media/WJY02821.486dc05070745229473c.jpg",
@@ -28,12 +28,12 @@
     "static/media/GALERI 3.png": "/static/media/GALERI 3.a545dc55546e8d8be096.png",
     "static/media/GI MAKSI FARID AZHAR (59) FACHRI.jpg": "/static/media/GI MAKSI FARID AZHAR (59) FACHRI.32906a430eeecd8ada44.jpg",
     "index.html": "/index.html",
-    "main.859ba3f7.css.map": "/static/css/main.859ba3f7.css.map",
-    "main.191f6c2a.js.map": "/static/js/main.191f6c2a.js.map",
+    "main.1502edec.css.map": "/static/css/main.1502edec.css.map",
+    "main.a19b1624.js.map": "/static/js/main.a19b1624.js.map",
     "453.8fd00af2.chunk.js.map": "/static/js/453.8fd00af2.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.859ba3f7.css",
-    "static/js/main.191f6c2a.js"
+    "static/css/main.1502edec.css",
+    "static/js/main.a19b1624.js"
   ]
 }
